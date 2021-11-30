@@ -163,6 +163,14 @@
     </dependencies>
 
     <build>
+      <pluginManagement>
+        <plugins>
+          <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.0.0-M5</version>
+          </plugin>
+        </plugins>
+      </pluginManagement>
         <defaultGoal>clean test install</defaultGoal>
         <plugins>
             <!-- TODO: re-enable, probably with google-chrome headless or qunit/npm instead

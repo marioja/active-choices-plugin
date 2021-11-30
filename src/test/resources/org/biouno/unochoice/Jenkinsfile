@@ -1,0 +1,70 @@
+pipeline {
+  agent { label 'master' }
+  stages {
+    stage('Parameters'){
+      steps {
+        script {
+        String errorValue='***ERROR***'
+  String ip='''
+String value="Cannot retrieve anything"
+String activeChoiceBinding=null
+String exceptionMessage=""
+try {activeChoiceBinding=jenkinsBuild.toString()} catch(Exception e){exceptionMessage="("+e.getMessage()+")"};
+if (activeChoiceBinding==null) value="Cannot retrieve jenkinsBuild"+exceptionMessage;
+else value=activeChoiceBinding;
+activeChoiceBinding=null;
+exceptionMessage=""
+try {activeChoiceBinding=jenkinsProject.toString()} catch(Exception e){exceptionMessage="("+e.getMessage()+")"};
+if (activeChoiceBinding==null) value=value+"/Cannot retrieve jenkinsProject"+exceptionMessage;
+else value=value+"/"+activeChoiceBinding;
+activeChoiceBinding=null;
+exceptionMessage=""
+try {activeChoiceBinding=jenkinsParameter.toString()} catch(Exception e){exceptionMessage="("+e.getMessage()+")"};
+if (activeChoiceBinding==null) value=value+"/Cannot retrieve jenkinsParameter"+exceptionMessage;
+else value=value+"/"+activeChoiceBinding;
+return '<input name="value" value="'+value+'" class="setting-input" type="text">'
+'''
+  String get_email_addresses='''
+String ipParam='';
+try {ipParam=INTERESTED_PARTIES} catch(Exception e){};
+String[] newIp=ipParam.split(' ')
+return '<input type="button" value="Validate"><input type="hidden" name="value" class="setting-input" value="'+newIp.join(",")+'">'
+  '''
+          properties([
+            parameters([
+              [$class: 'DynamicReferenceParameter', choiceType: 'ET_FORMATTED_HTML',
+                description: 'IP description', name: 'INTERESTED_PARTIES',
+                omitValueField: true, script: [
+                  $class: 'GroovyScript', fallbackScript: [
+                    classpath: [], sandbox: true, script: 'return \'<input name="value" value="'+errorValue+'" class="setting-input" type="text">\''
+                  ], script: [
+                    classpath: [], sandbox: true, script: ip
+                  ]
+                ]
+              ],
+              [$class: 'DynamicReferenceParameter', choiceType: 'ET_FORMATTED_HTML',
+                description: '',
+                name: 'User Validation', referencedParameters: 'INTERESTED_PARTIES', omitValueField: true,
+                script: [
+                  $class: 'GroovyScript', fallbackScript: [
+                    classpath: [], sandbox: true, script: 'return ["'+errorValue+'"]'
+                  ],
+                  script: [
+                    classpath: [], sandbox: true, script: get_email_addresses
+                  ]
+                ]
+              ],
+            ])
+          ])
+        }
+      }
+    }
+    stage('Output') {
+      steps {
+        script {
+          echo "ip=${params.INTERESTED_PARTIES}"
+        }
+      }
+    }
+  }
+}
