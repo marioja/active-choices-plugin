@@ -28,6 +28,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProjectTest.scheduleAndFindBranchProject;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -105,24 +106,37 @@ public class TestDynamicReferenceParameterBindings {
         	assertEquals(1, b1.getNumber());
         	jenkins.assertLogContains("ip=\r", b1);
         	mp.getItems().forEach(System.out::println);
-        	WorkflowJob branch = mp.getItem("master");
-        	assertNotNull("master branch", branch);
-        	Map<JobPropertyDescriptor, JobProperty<? super WorkflowJob>> props = branch.getProperties();
-        	assertEquals(2, props.size()); // branch and parameterized 
+        	WorkflowJob master_branch = mp.getItem("master");
+        	assertNotNull("master branch", master_branch);
+        	Map<JobPropertyDescriptor, JobProperty<? super WorkflowJob>> props = master_branch.getProperties();
+        	assertEquals("number of job properties", 2, props.size()); // branch and parameterized 
+        	DynamicReferenceParameter ipParm=null;
         	for (Entry<JobPropertyDescriptor, JobProperty<? super WorkflowJob>> prop : props.entrySet()) {
         		if (prop.getValue() instanceof BranchJobProperty) {
         			assertEquals("property key display name", "Based on branch", prop.getKey().getDisplayName());
         		} else if (prop.getValue() instanceof ParametersDefinitionProperty) {
     				ParametersDefinitionProperty pdp=(ParametersDefinitionProperty) prop.getValue();
-    				ParameterDefinition ipParm = pdp.getParameterDefinition("IP");
-    				pdp.getParameterDefinitions().forEach(pdef -> logger.info("Parameter def name={}, type={}", pdef.getName(), pdef.getType()));
+    				assertEquals("number of job parameters", 2, pdp.getParameterDefinitions().size());
+    				ParameterDefinition pdef = pdp.getParameterDefinition("IP");
+    				assertNotNull("IP parameter definition", pdef);
+    				assertEquals("parameter name", "IP", pdef.getName());
+    				assertEquals("parameter type", "DynamicReferenceParameter", pdef.getType());
+    				assertEquals("parameter description", "IP description", pdef.getDescription());
+    				assertEquals("parameter default value", "(StringParameterValue) IP=''", pdef.getDefaultParameterValue().toString());
+    				ipParm=(DynamicReferenceParameter) pdef;
+    				pdef = pdp.getParameterDefinition("User Validation");
+    				assertNotNull("User Validation parameter definition", pdef);
+    				assertEquals("parameter name", "User Validation", pdef.getName());
+    				assertEquals("parameter type", "DynamicReferenceParameter", pdef.getType());
+    				assertEquals("parameter description", "", pdef.getDescription());
+    				assertEquals("parameter default value", "(StringParameterValue) User Validation=''", pdef.getDefaultParameterValue().toString());
     			} else {
-    				
+    				fail("Invalid job parameter defined"+prop.getKey().getClass().getCanonicalName());
     			}
-        		if ("INTERESTED_PARTIES".equals(prop.getKey().getDisplayName())) {
-        		}
         	}
-        	WorkflowRun b2 = jenkins.assertBuildStatusSuccess(p.scheduleBuild2(0,  new ParametersAction(new StringParameterValue("INTERESTED_PARTIES", "hello bye"))));
+    		String res = ipParm.getChoicesAsStringForUI();
+    		logger.info("IP getChoicesAsStringForUI={}", res);
+        	WorkflowRun b2 = jenkins.assertBuildStatusSuccess(p.scheduleBuild2(0,  new ParametersAction(new StringParameterValue("IP", "hello bye"))));
     	} finally {
         	logger.info("Temp dir copied to: "+saveTempDir());
     	}

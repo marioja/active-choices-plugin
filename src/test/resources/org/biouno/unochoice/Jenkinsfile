@@ -65,7 +65,7 @@ return '<input type="button" value="Validate"><input type="hidden" name="value" 
     stage('Output') {
       steps {
         script {
-          echo "ip=${params.INTERESTED_PARTIES}"
+          echo "ip=${params.IP}"
         }
       }
     }
