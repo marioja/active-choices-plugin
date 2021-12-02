@@ -27,12 +27,16 @@ package org.biouno.unochoice;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProjectTest.scheduleAndFindBranchProject;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
@@ -43,11 +47,18 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.cloudbees.groovy.cps.impl.SwitchBlock;
+
+import hudson.model.JobProperty;
+import hudson.model.JobPropertyDescriptor;
+import hudson.model.ParameterDefinition;
 import hudson.model.ParametersAction;
+import hudson.model.ParametersDefinitionProperty;
 import hudson.model.StringParameterValue;
 import jenkins.branch.BranchSource;
 import jenkins.plugins.git.GitSCMSource;
@@ -79,6 +90,9 @@ public class TestDynamicReferenceParameterBindings {
 
     @Rule
     public JenkinsRule jenkins = new JenkinsRule();
+    
+    @Rule
+    public Timeout globalTimeout = Timeout.seconds(900);
 
     @Rule
     public GitSampleRepoRule sampleRepo = new GitSampleRepoRule();
@@ -100,6 +114,7 @@ public class TestDynamicReferenceParameterBindings {
         	sampleRepo.write("Jenkinsfile", JENKINSFILE);
         	sampleRepo.git("add","Jenkinsfile");
         	sampleRepo.git("commit", "--all", "--message=flow");
+        	jenkins.setQuietPeriod(6);
         	WorkflowMultiBranchProject mp = jenkins.createProject(WorkflowMultiBranchProject.class, "p");
         	mp.getSourcesList().add(new BranchSource(new GitSCMSource(null, sampleRepo.toString(), "", "*", "", false)));
         	WorkflowJob p = scheduleAndFindBranchProject(mp, "master");
@@ -108,6 +123,25 @@ public class TestDynamicReferenceParameterBindings {
         	WorkflowRun b1 = p.getLastBuild();
         	assertEquals(1, b1.getNumber());
         	jenkins.assertLogContains("ip=\r", b1);
+        	mp.getItems().forEach(System.out::println);
+        	WorkflowJob branch = mp.getItem("master");
+        	assertNotNull("master branch is null", branch);
+        	Map<JobPropertyDescriptor, JobProperty<? super WorkflowJob>> props = branch.getProperties();
+        	assertEquals(2, props.size()); // branch and parameterized 
+        	for (Entry<JobPropertyDescriptor, JobProperty<? super WorkflowJob>> prop : props.entrySet()) {
+        		JobPropertyDescriptor k = prop.getKey();
+        		logger.info("Job property display name {}",prop.getKey().getDisplayName());
+        		if (prop.getValue() instanceof List) {
+        			
+        		} else if (prop.getValue() instanceof ParametersDefinitionProperty) {
+    				ParametersDefinitionProperty pdp=(ParametersDefinitionProperty) prop.getValue();
+    				pdp.getParameterDefinitions().forEach(pdef -> logger.info("Parameter def name={}, type={}", pdef.getName(), pdef.getType()));
+    			} else {
+    				
+    			}
+        		if ("INTERESTED_PARTIES".equals(prop.getKey().getDisplayName())) {
+        		}
+        	}
         	WorkflowRun b2 = jenkins.assertBuildStatusSuccess(p.scheduleBuild2(0,  new ParametersAction(new StringParameterValue("INTERESTED_PARTIES", "hello bye"))));
     	} finally {
         	logger.info("Temp dir copied to: "+saveTempDir());

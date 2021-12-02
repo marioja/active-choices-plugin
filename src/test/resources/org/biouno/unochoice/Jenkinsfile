@@ -6,6 +6,9 @@ pipeline {
         script {
         String errorValue='***ERROR***'
   String ip='''
+import org.slf4j.*
+final Logger logger = LoggerFactory.getLogger('hudson.util.JUnitTests')
+logger.info("Running active choice plugin script for IP")
 String value="Cannot retrieve anything"
 String activeChoiceBinding=null
 String exceptionMessage=""
