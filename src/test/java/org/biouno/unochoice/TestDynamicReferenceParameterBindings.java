@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
 
 import hudson.model.JobProperty;
 import hudson.model.JobPropertyDescriptor;
+import hudson.model.ParameterDefinition;
 import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.StringParameterValue;
@@ -67,23 +68,6 @@ public class TestDynamicReferenceParameterBindings {
 	private final String SCRIPT = "return ['D', 'C', 'B', 'A']";
     private final String FALLBACK_SCRIPT = "";
     private static String JENKINSFILE;
-    private final static String ip="String value=\"Cannot retrieve anything\"\n" + 
-    		"String activeChoiceBinding=null\n" + 
-    		"String exceptionMessage=\"\"\n" + 
-    		"try {activeChoiceBinding=jenkinsBuild.toString()} catch(Exception e){exceptionMessage=\"(\"+e.getMessage()+\")\"};\n" + 
-    		"if (activeChoiceBinding==null) value=\"Cannot retrieve jenkinsBuild\"+exceptionMessage;\n" + 
-    		"else value=activeChoiceBinding;\n" + 
-    		"activeChoiceBinding=null;\n" + 
-    		"exceptionMessage=\"\"\n" + 
-    		"try {activeChoiceBinding=jenkinsProject.toString()} catch(Exception e){exceptionMessage=\"(\"+e.getMessage()+\")\"};\n" + 
-    		"if (activeChoiceBinding==null) value=value+\"/Cannot retrieve jenkinsProject\"+exceptionMessage;\n" + 
-    		"else value=value+\"/\"+activeChoiceBinding;\n" + 
-    		"activeChoiceBinding=null;\n" + 
-    		"exceptionMessage=\"\"\n" + 
-    		"try {activeChoiceBinding=jenkinsParameter.toString()} catch(Exception e){exceptionMessage=\"(\"+e.getMessage()+\")\"};\n" + 
-    		"if (activeChoiceBinding==null) value=value+\"/Cannot retrieve jenkinsParameter\"+exceptionMessage;\n" + 
-    		"else value=value+\"/\"+activeChoiceBinding;\n" + 
-    		"return '<input name=\"value\" value=\"'+value+'\" class=\"setting-input\" type=\"text\">'";
 
     @Rule
     public JenkinsRule jenkins = new JenkinsRule();
@@ -126,12 +110,11 @@ public class TestDynamicReferenceParameterBindings {
         	Map<JobPropertyDescriptor, JobProperty<? super WorkflowJob>> props = branch.getProperties();
         	assertEquals(2, props.size()); // branch and parameterized 
         	for (Entry<JobPropertyDescriptor, JobProperty<? super WorkflowJob>> prop : props.entrySet()) {
-        		JobPropertyDescriptor k = prop.getKey();
-        		logger.info("Job property display name {}",prop.getKey().getDisplayName());
         		if (prop.getValue() instanceof BranchJobProperty) {
         			assertEquals("property key display name", "Based on branch", prop.getKey().getDisplayName());
         		} else if (prop.getValue() instanceof ParametersDefinitionProperty) {
     				ParametersDefinitionProperty pdp=(ParametersDefinitionProperty) prop.getValue();
+    				ParameterDefinition ipParm = pdp.getParameterDefinition("IP");
     				pdp.getParameterDefinitions().forEach(pdef -> logger.info("Parameter def name={}, type={}", pdef.getName(), pdef.getType()));
     			} else {
     				

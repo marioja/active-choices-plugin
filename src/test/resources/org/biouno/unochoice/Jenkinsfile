@@ -29,14 +29,14 @@ return '<input name="value" value="'+value+'" class="setting-input" type="text">
 '''
   String get_email_addresses='''
 String ipParam='';
-try {ipParam=INTERESTED_PARTIES} catch(Exception e){};
+try {ipParam=IP} catch(Exception e){};
 String[] newIp=ipParam.split(' ')
 return '<input type="button" value="Validate"><input type="hidden" name="value" class="setting-input" value="'+newIp.join(",")+'">'
   '''
           properties([
             parameters([
               [$class: 'DynamicReferenceParameter', choiceType: 'ET_FORMATTED_HTML',
-                description: 'IP description', name: 'INTERESTED_PARTIES',
+                description: 'IP description', name: 'IP',
                 omitValueField: true, script: [
                   $class: 'GroovyScript', fallbackScript: [
                     classpath: [], sandbox: true, script: 'return \'<input name="value" value="'+errorValue+'" class="setting-input" type="text">\''
@@ -47,7 +47,7 @@ return '<input type="button" value="Validate"><input type="hidden" name="value" 
               ],
               [$class: 'DynamicReferenceParameter', choiceType: 'ET_FORMATTED_HTML',
                 description: '',
-                name: 'User Validation', referencedParameters: 'INTERESTED_PARTIES', omitValueField: true,
+                name: 'User Validation', referencedParameters: 'IP', omitValueField: true,
                 script: [
                   $class: 'GroovyScript', fallbackScript: [
                     classpath: [], sandbox: true, script: 'return ["'+errorValue+'"]'
