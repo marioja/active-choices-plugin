@@ -34,7 +34,6 @@ import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -42,6 +41,7 @@ import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.jenkinsci.plugins.workflow.multibranch.BranchJobProperty;
 import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -52,11 +52,8 @@ import org.jvnet.hudson.test.JenkinsRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.cloudbees.groovy.cps.impl.SwitchBlock;
-
 import hudson.model.JobProperty;
 import hudson.model.JobPropertyDescriptor;
-import hudson.model.ParameterDefinition;
 import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.StringParameterValue;
@@ -125,14 +122,14 @@ public class TestDynamicReferenceParameterBindings {
         	jenkins.assertLogContains("ip=\r", b1);
         	mp.getItems().forEach(System.out::println);
         	WorkflowJob branch = mp.getItem("master");
-        	assertNotNull("master branch is null", branch);
+        	assertNotNull("master branch", branch);
         	Map<JobPropertyDescriptor, JobProperty<? super WorkflowJob>> props = branch.getProperties();
         	assertEquals(2, props.size()); // branch and parameterized 
         	for (Entry<JobPropertyDescriptor, JobProperty<? super WorkflowJob>> prop : props.entrySet()) {
         		JobPropertyDescriptor k = prop.getKey();
         		logger.info("Job property display name {}",prop.getKey().getDisplayName());
-        		if (prop.getValue() instanceof List) {
-        			
+        		if (prop.getValue() instanceof BranchJobProperty) {
+        			assertEquals("property key display name", "Based on branch", prop.getKey().getDisplayName());
         		} else if (prop.getValue() instanceof ParametersDefinitionProperty) {
     				ParametersDefinitionProperty pdp=(ParametersDefinitionProperty) prop.getValue();
     				pdp.getParameterDefinitions().forEach(pdef -> logger.info("Parameter def name={}, type={}", pdef.getName(), pdef.getType()));
